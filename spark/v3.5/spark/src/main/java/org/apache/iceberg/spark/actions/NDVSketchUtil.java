@@ -38,6 +38,7 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.stats.EmbeddingExpression;
 import org.apache.spark.sql.stats.ThetaSketchAgg;
 
 public class NDVSketchUtil {
@@ -75,11 +76,23 @@ public class NDVSketchUtil {
   private static Row computeNDVSketches(
       SparkSession spark, Table table, Snapshot snapshot, List<String> colNames) {
     Dataset<Row> inputDF = SparkTableUtil.loadTable(spark, table, snapshot.snapshotId());
-    return inputDF.select(toAggColumns(colNames)).first();
+    Dataset<Row> resultDF = inputDF;
+    for(String colName : colNames) {
+      EmbeddingExpression embeddingExpression = new EmbeddingExpression(colName);
+      Column embeddingColumn = new Column(embeddingExpression).alias(colName + "_embedding");
+      resultDF = resultDF.withColumn(colName + "_embedding", embeddingColumn);
+    }
+    resultDF.show(false);
+    return resultDF.select("data_embedding").first();
   }
 
   private static Column[] toAggColumns(List<String> colNames) {
-    return colNames.stream().map(NDVSketchUtil::toAggColumn).toArray(Column[]::new);
+    return colNames.stream().map(NDVSketchUtil::toEmbedding).toArray(Column[]::new);
+  }
+
+  private static Column toEmbedding(String colName) {
+    EmbeddingExpression embeddingExpression = new EmbeddingExpression(colName);
+    return new Column(embeddingExpression).alias(colName + "_embedding");
   }
 
   private static Column toAggColumn(String colName) {
