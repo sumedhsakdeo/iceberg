@@ -65,6 +65,9 @@ project(":iceberg-spark:iceberg-spark-${sparkMajorVersion}_${scalaVersion}") {
       implementation 'org.scala-lang:scala-library:2.12.18'
     }
 
+    implementation libs.dev.langchain4j
+    implementation libs.dev.langchain4j.minilm
+
     compileOnly libs.errorprone.annotations
     compileOnly libs.avro.avro
     compileOnly("org.apache.spark:spark-hive_${scalaVersion}:${libs.versions.spark.hive35.get()}") {
