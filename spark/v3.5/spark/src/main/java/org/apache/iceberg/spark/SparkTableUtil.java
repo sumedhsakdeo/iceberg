@@ -272,6 +272,7 @@ public class SparkTableUtil {
     }
   }
 
+
   private static List<DataFile> listPartition(
       SparkPartition partition,
       PartitionSpec spec,
@@ -725,6 +726,14 @@ public class SparkTableUtil {
   public static Dataset<Row> loadMetadataTable(
       SparkSession spark, Table table, MetadataTableType type) {
     return loadMetadataTable(spark, table, type, ImmutableMap.of());
+  }
+
+
+  public static Dataset<Row> loadTable(SparkSession sparkSession, Table table, long snapshotId) {
+    SparkTable sparkTable = new SparkTable(table, snapshotId, false);
+    CaseInsensitiveStringMap options = new CaseInsensitiveStringMap(ImmutableMap.of());
+    DataSourceV2Relation relation = DataSourceV2Relation.create(sparkTable, Some.empty(), Some.empty(), options);
+    return Dataset.ofRows(sparkSession, relation);
   }
 
   public static Dataset<Row> loadMetadataTable(

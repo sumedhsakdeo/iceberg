@@ -20,6 +20,7 @@ package org.apache.iceberg.spark.actions;
 
 import org.apache.iceberg.Table;
 import org.apache.iceberg.actions.ActionsProvider;
+import org.apache.iceberg.actions.ComputeTableEmbeddings;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.Spark3Util.CatalogAndIdentifier;
 import org.apache.spark.sql.SparkSession;
@@ -96,4 +97,10 @@ public class SparkActions implements ActionsProvider {
   public RewritePositionDeleteFilesSparkAction rewritePositionDeletes(Table table) {
     return new RewritePositionDeleteFilesSparkAction(spark, table);
   }
+
+  @Override
+  public ComputeTableEmbeddings computeTableEmbeddings(Table table) {
+    return new ComputeTableEmbeddingsSparkAction(spark, table);
+  }
+
 }
