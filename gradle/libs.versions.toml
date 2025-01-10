@@ -37,6 +37,7 @@ calcite = "1.10.0"
 datasketches = "6.1.1"
 delta-standalone = "3.3.0"
 delta-spark = "3.2.1"
+djl = "0.28.0"
 esotericsoftware-kryo = "4.0.3"
 errorprone-annotations = "2.36.0"
 failsafe = "3.3.2"
@@ -105,6 +106,10 @@ calcite-core = { module = "org.apache.calcite:calcite-core", version.ref = "calc
 calcite-druid = { module = "org.apache.calcite:calcite-druid", version.ref = "calcite" }
 datasketches = { module = "org.apache.datasketches:datasketches-java", version.ref = "datasketches" }
 delta-standalone = { module = "io.delta:delta-standalone_2.12", version.ref = "delta-standalone" }
+djl-api = { module = "ai.djl:api", version.ref = "djl" }
+djl-pytorch-engine = { module = "ai.djl.pytorch:pytorch-engine", version.ref = "djl" }
+djl-pytorch-model-zoo = { module = "ai.djl.pytorch:pytorch-model-zoo", version.ref = "djl" }
+djl-huggingface = { module = "ai.djl.huggingface:tokenizers", version.ref = "djl" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone-annotations" }
 failsafe = { module = "dev.failsafe:failsafe", version.ref = "failsafe"}
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }

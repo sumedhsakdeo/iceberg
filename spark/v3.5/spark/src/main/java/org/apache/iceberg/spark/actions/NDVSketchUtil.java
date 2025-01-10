@@ -38,6 +38,7 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.stats.EmbeddingAggregate;
 import org.apache.spark.sql.stats.EmbeddingExpression;
 import org.apache.spark.sql.stats.ThetaSketchAgg;
 
@@ -49,45 +50,45 @@ public class NDVSketchUtil {
 
   static List<Blob> generateBlobs(
       SparkSession spark, Table table, Snapshot snapshot, List<String> columns) {
-    Row sketches = computeNDVSketches(spark, table, snapshot, columns);
+    Row embeddings = computeNDVSketches(spark, table, snapshot, columns);
     Schema schema = table.schemas().get(snapshot.schemaId());
     List<Blob> blobs = Lists.newArrayList();
     for (int i = 0; i < columns.size(); i++) {
       Types.NestedField field = schema.findField(columns.get(i));
-      Sketch sketch = CompactSketch.wrap(Memory.wrap((byte[]) sketches.get(i)));
-      blobs.add(toBlob(field, sketch, snapshot));
+      EmbeddingBuffer embeddingBuffer = EmbeddingBuffer.deserialize((byte[]) embeddings.get(i));
+      blobs.add(toBlob(field, embeddingBuffer, snapshot));
     }
     return blobs;
   }
 
-  private static Blob toBlob(Types.NestedField field, Sketch sketch, Snapshot snapshot) {
+  private static Blob toBlob(Types.NestedField field, EmbeddingBuffer embeddingBuffer, Snapshot snapshot) {
     return new Blob(
-        StandardBlobTypes.APACHE_DATASKETCHES_THETA_V1,
+        StandardBlobTypes.EMBEDDING_V1,
         ImmutableList.of(field.fieldId()),
         snapshot.snapshotId(),
         snapshot.sequenceNumber(),
-        ByteBuffer.wrap(sketch.toByteArray()),
+        ByteBuffer.wrap(embeddingBuffer.serialize()),
         PuffinCompressionCodec.ZSTD,
-        ImmutableMap.of(
-            APACHE_DATASKETCHES_THETA_V1_NDV_PROPERTY,
-            String.valueOf((long) sketch.getEstimate())));
+            ImmutableMap.of());
   }
 
   private static Row computeNDVSketches(
       SparkSession spark, Table table, Snapshot snapshot, List<String> colNames) {
     Dataset<Row> inputDF = SparkTableUtil.loadTable(spark, table, snapshot.snapshotId());
-    Dataset<Row> resultDF = inputDF;
-    for(String colName : colNames) {
-      EmbeddingExpression embeddingExpression = new EmbeddingExpression(colName);
-      Column embeddingColumn = new Column(embeddingExpression).alias(colName + "_embedding");
-      resultDF = resultDF.withColumn(colName + "_embedding", embeddingColumn);
-    }
-    resultDF.show(false);
-    return resultDF.select("data_embedding").first();
+    return inputDF.select(toEmbeddingAggregateColumns(colNames)).first();
   }
 
   private static Column[] toAggColumns(List<String> colNames) {
     return colNames.stream().map(NDVSketchUtil::toEmbedding).toArray(Column[]::new);
+  }
+
+  private static Column[] toEmbeddingAggregateColumns(List<String> colNames) {
+    return colNames.stream().map(NDVSketchUtil::toEmbeddingAggregateColumn).toArray(Column[]::new);
+  }
+
+  private static Column toEmbeddingAggregateColumn(String colName) {
+    EmbeddingAggregate agg = new EmbeddingAggregate(colName);
+    return new Column(agg.toAggregateExpression());
   }
 
   private static Column toEmbedding(String colName) {

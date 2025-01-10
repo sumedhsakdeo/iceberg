@@ -29,4 +29,8 @@ public final class StandardBlobTypes {
 
   /** A serialized deletion vector according to the Iceberg spec */
   public static final String DV_V1 = "deletion-vector-v1";
+
+  /** A serialized form of embedding */
+  public static final String EMBEDDING_V1 = "embedding-v1";
+
 }

@@ -64,6 +64,10 @@ project(":iceberg-spark:iceberg-spark-${sparkMajorVersion}_${scalaVersion}") {
       // scala-collection-compat_2.12 pulls scala 2.12.17 and we need 2.12.18 for JDK 21 support
       implementation 'org.scala-lang:scala-library:2.12.18'
     }
+    implementation("ai.djl:api:${libs.versions.djl.get()}")
+    implementation("ai.djl.pytorch:pytorch-engine:${libs.versions.djl.get()}")
+    implementation("ai.djl.pytorch:pytorch-model-zoo:${libs.versions.djl.get()}")
+    implementation("ai.djl.huggingface:tokenizers:${libs.versions.djl.get()}")
 
     compileOnly libs.errorprone.annotations
     compileOnly libs.avro.avro
