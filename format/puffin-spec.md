@@ -181,6 +181,28 @@ for Puffin v1.
 [roaring-bitmap-portable-serialization]: https://github.com/RoaringBitmap/RoaringFormatSpec?tab=readme-ov-file#extension-for-64-bit-implementations
 [roaring-bitmap-general-layout]: https://github.com/RoaringBitmap/RoaringFormatSpec?tab=readme-ov-file#general-layout
 
+
+#### `embedding` blob type
+
+A serialized form of an embedding for select string-type columns using chosen model.
+Embedding is process of converting complex data (e.g., text, images, audio) into a
+dense vector representation that can be used for tasks like similarity search,
+clustering, and classification. To compute embeddings we leverage [langchain4j](https://docs.langchain4j.dev/)
+which comes with builtin [embedding models](https://docs.langchain4j.dev/category/embedding-models).
+
+The serialized blob is a JSON representation list of [input text, metadata][text-segment]
+and its [embedding][embedding]. Metadata includes following properties:
+
+- `column_name`: Name of the column for which embedding is being computed.
+- `model_name`: Name of the model used to compute the embedding.
+
+[text-segment]: https://github.com/langchain4j/langchain4j/blob/main/langchain4j-core/src/main/java/dev/langchain4j/data/segment/TextSegment.java
+[embedding]: https://github.com/langchain4j/langchain4j/blob/main/langchain4j-core/src/main/java/dev/langchain4j/data/embedding/Embedding.java
+
+The blob metadata for this blob may include following properties:
+
+- `embeddings`: Number of embeddings computed for the given column.
+
 ### Compression codecs
 
 The data can also be uncompressed. If it is compressed the codec should be one of

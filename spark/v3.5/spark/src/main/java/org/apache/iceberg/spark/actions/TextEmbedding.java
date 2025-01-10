@@ -16,20 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iceberg.puffin;
+package org.apache.iceberg.spark.actions;
 
-public final class StandardBlobTypes {
-  private StandardBlobTypes() {}
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.segment.TextSegment;
 
-  /**
-   * A serialized form of a "compact" Theta sketch produced by the <a
-   * href="https://datasketches.apache.org/">Apache DataSketches</a> library
-   */
-  public static final String APACHE_DATASKETCHES_THETA_V1 = "apache-datasketches-theta-v1";
+public class TextEmbedding {
+  private final TextSegment textSegment;
+  private final Embedding embedding;
 
-  /** A serialized deletion vector according to the Iceberg spec */
-  public static final String DV_V1 = "deletion-vector-v1";
+  public TextEmbedding(TextSegment textSegment, Embedding embedding) {
+    this.textSegment = textSegment;
+    this.embedding = embedding;
+  }
 
-  /** A serialized embedding representation using a chosen model */
-  public static final String EMBEDDINGS_V1 = "embedding-v1";
+  public TextSegment getTextSegment() {
+    return this.textSegment;
+  }
+
+  public Embedding getEmbedding() {
+    return this.embedding;
+  }
 }
