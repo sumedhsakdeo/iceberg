@@ -37,6 +37,7 @@ calcite = "1.10.0"
 datasketches = "6.1.1"
 delta-standalone = "3.3.0"
 delta-spark = "3.2.1"
+djl = "0.20.0"
 langchain4j = "1.0.0-alpha1"
 esotericsoftware-kryo = "4.0.3"
 errorprone-annotations = "2.36.0"
@@ -107,7 +108,11 @@ calcite-druid = { module = "org.apache.calcite:calcite-druid", version.ref = "ca
 datasketches = { module = "org.apache.datasketches:datasketches-java", version.ref = "datasketches" }
 delta-standalone = { module = "io.delta:delta-standalone_2.12", version.ref = "delta-standalone" }
 dev-langchain4j = { module = "dev.langchain4j:langchain4j", version.ref = "langchain4j" }
-dev-langchain4j-minilm = { module = "dev.langchain4j:langchain4j-embeddings-all-minilm-l6-v2-q", version.ref = "langchain4j" }
+ai-djl-api = { module = "ai.djl:api", version.ref = "djl" }
+ai-djl-huggingface-tokenizers = { module = "ai.djl.huggingface:tokenizers", version.ref = "djl" }
+dev-langchain4j-embeddings = { module = "dev.langchain4j:langchain4j-embeddings", version.ref = "langchain4j" }
+dev-langchain4j-embeddings-minilm = { module = "dev.langchain4j:langchain4j-embeddings-all-minilm-l6-v2", version.ref = "langchain4j" }
+dev-langchain4j-ollama = { module = "dev.langchain4j:langchain4j-ollama", version.ref = "langchain4j" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone-annotations" }
 failsafe = { module = "dev.failsafe:failsafe", version.ref = "failsafe"}
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs-jsr305" }
