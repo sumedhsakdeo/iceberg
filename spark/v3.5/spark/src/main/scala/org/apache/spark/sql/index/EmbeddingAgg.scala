@@ -1,22 +1,20 @@
 /*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  * Licensed to the Apache Software Foundation (ASF) under one
- *  * or more contributor license agreements.  See the NOTICE file
- *  * distributed with this work for additional information
- *  * regarding copyright ownership.  The ASF licenses this file
- *  * to you under the Apache License, Version 2.0 (the
- *  * "License"); you may not use this file except in compliance
- *  * with the License.  You may obtain a copy of the License at
- *  *
- *  *   http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing,
- *  * software distributed under the License is distributed on an
- *  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  * KIND, either express or implied.  See the License for the
- *  * specific language governing permissions and limitations
- *  * under the License.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.apache.spark.sql.index
@@ -25,18 +23,28 @@ import dev.langchain4j.data.document.Metadata
 import dev.langchain4j.data.embedding.Embedding
 import dev.langchain4j.data.segment.TextSegment
 import dev.langchain4j.model.embedding.EmbeddingModel
-import org.apache.iceberg.spark.actions.{EmbeddingModelBuilder, TextEmbedding, TextEmbeddingBuffer}
+import java.util.Collections
+import org.apache.iceberg.spark.actions.EmbeddingModelBuilder
+import org.apache.iceberg.spark.actions.TextEmbedding
+import org.apache.iceberg.spark.actions.TextEmbeddingBuffer
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.expressions.aggregate.{ImperativeAggregate, TypedImperativeAggregate}
+import org.apache.spark.sql.catalyst.expressions.aggregate.ImperativeAggregate
+import org.apache.spark.sql.catalyst.expressions.aggregate.TypedImperativeAggregate
 import org.apache.spark.sql.catalyst.trees.UnaryLike
 import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.types.{BinaryType, DataType}
+import org.apache.spark.sql.types.BinaryType
+import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
-
-import java.util.Collections
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
+/**
+ * Generates embeddings for string-type columns using a chosen model.
+ * Each row's embedding is combined with its original text and metadata (model, column name) to create a compact
+ * representation.
+ * The entire dataset - including all embeddings, texts, and metadata - is serialized into a single buffer,
+ * which is then returned.
+ */
 case class EmbeddingAgg(
                          columnName: String,
                          modelName: String,
@@ -73,7 +81,8 @@ case class EmbeddingAgg(
         .modelInputs(modelInputs.asJava)
         .build()
       val embedding: Embedding = embeddingModel.embed(textSegment).content()
-      val singletonList: java.util.List[TextEmbedding] = Collections.singletonList(new TextEmbedding(textSegment, embedding))
+      val singletonList: java.util.List[TextEmbedding] =
+        Collections.singletonList(new TextEmbedding(textSegment, embedding))
       buffer.merge(new TextEmbeddingBuffer(singletonList))
     } else {
       val emptyList: java.util.List[TextEmbedding] = Collections.emptyList()
