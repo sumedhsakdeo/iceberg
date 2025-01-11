@@ -25,10 +25,7 @@ import dev.langchain4j.data.document.Metadata
 import dev.langchain4j.data.embedding.Embedding
 import dev.langchain4j.data.segment.TextSegment
 import dev.langchain4j.model.embedding.EmbeddingModel
-import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel
-import dev.langchain4j.model.ollama.OllamaEmbeddingModel
-import dev.langchain4j.model.output.Response
-import org.apache.iceberg.spark.actions.{TextEmbedding, TextEmbeddingBuffer}
+import org.apache.iceberg.spark.actions.{EmbeddingModelBuilder, TextEmbedding, TextEmbeddingBuffer}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.expressions.aggregate.{ImperativeAggregate, TypedImperativeAggregate}
@@ -37,21 +34,25 @@ import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.types.{BinaryType, DataType}
 import org.apache.spark.unsafe.types.UTF8String
 
-import java.time.Duration
 import java.util.Collections
+import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
 case class EmbeddingAgg(
+                         columnName: String,
+                         modelName: String,
+                         modelInputs: Map[String, String],
                          child: Expression,
                          mutableAggBufferOffset: Int = 0,
-                         inputAggBufferOffset: Int = 0) extends TypedImperativeAggregate[TextEmbeddingBuffer]
+                         inputAggBufferOffset: Int = 0
+                       ) extends TypedImperativeAggregate[TextEmbeddingBuffer]
   with UnaryLike[Expression] {
 
   override def nullable: Boolean = false
 
   override def dataType: DataType = BinaryType
 
-  def this(colName: String) = {
-    this(col(colName).expr, 0, 0)
+  def this(colName: String, modelName: String, modelInputs: Map[String, String]) = {
+    this(colName, modelName, modelInputs, col(colName).expr, 0, 0)
   }
 
   override def createAggregationBuffer(): TextEmbeddingBuffer = {
@@ -63,26 +64,15 @@ case class EmbeddingAgg(
     val value = child.eval(input)
     if (value != null && value.isInstanceOf[UTF8String]) {
 
-      System.setProperty("ai.djl.offline", "true")
-      System.setProperty("DJL_OFFLINE", "true")
-
-      val embeddingModel = new AllMiniLmL6V2EmbeddingModel()
-      val response : Response[Embedding] = embeddingModel.embed(value.toString)
-      print(response.content())
-
-      val ollamaModel : EmbeddingModel = new OllamaEmbeddingModel(
-        "http://localhost:11434/",
-        "llama3.1",
-        Duration.ofSeconds(60),
-        3,
-        true,
-        true,
-        Collections.emptyMap()
-      )
-
       val metadata: Metadata = new Metadata()
+      metadata.put("column_name", columnName)
+      metadata.put("model_name", modelName)
       val textSegment: TextSegment = TextSegment.from(value.toString, metadata)
-      val embedding: Embedding = ollamaModel.embed(textSegment).content()
+      val embeddingModel: EmbeddingModel = EmbeddingModelBuilder.builder()
+        .modelName(modelName)
+        .modelInputs(modelInputs.asJava)
+        .build()
+      val embedding: Embedding = embeddingModel.embed(textSegment).content()
       val singletonList: java.util.List[TextEmbedding] = Collections.singletonList(new TextEmbedding(textSegment, embedding))
       buffer.merge(new TextEmbeddingBuffer(singletonList))
     } else {
