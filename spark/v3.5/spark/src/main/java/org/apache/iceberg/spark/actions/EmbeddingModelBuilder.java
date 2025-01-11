@@ -51,17 +51,19 @@ public class EmbeddingModelBuilder {
   private String modelName;
   private Map<String, String> modelInputs;
 
+  private EmbeddingModelBuilder() {}
+
   public static EmbeddingModelBuilder builder() {
     return new EmbeddingModelBuilder();
   }
 
-  public EmbeddingModelBuilder modelName(String modelName) {
-    this.modelName = modelName;
+  public EmbeddingModelBuilder modelName(String name) {
+    this.modelName = name;
     return this;
   }
 
-  public EmbeddingModelBuilder modelInputs(Map<String, String> modelInputs) {
-    this.modelInputs = modelInputs;
+  public EmbeddingModelBuilder modelInputs(Map<String, String> inputs) {
+    this.modelInputs = inputs;
     return this;
   }
 
@@ -70,7 +72,7 @@ public class EmbeddingModelBuilder {
       case ALL_MINI_LM_L6V2:
         return buildAllMiniLmL6V2EmbeddingModel();
       case OLLAMA_LLAMA_31:
-        return buildOllamaEmbeddingModel(modelName, modelInputs);
+        return buildOllamaEmbeddingModel();
       default:
         throw new UnsupportedOperationException("Model is not supported");
     }
@@ -82,8 +84,7 @@ public class EmbeddingModelBuilder {
     return new AllMiniLmL6V2EmbeddingModel();
   }
 
-  private OllamaEmbeddingModel buildOllamaEmbeddingModel(
-      String modelName, Map<String, String> modelInputs) {
+  private OllamaEmbeddingModel buildOllamaEmbeddingModel() {
     String baseUrl = modelInputs.getOrDefault(OLLAMA_BASE_URL, OLLAMA_DEFAULT_BASE_URL);
     String ollamaModelName = modelName.split("/")[1];
     Duration duration =
