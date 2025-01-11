@@ -41,11 +41,11 @@ import scala.Predef;
 import scala.Tuple2;
 import scala.collection.JavaConverters;
 
-public class TextEmbeddingPuffinWriter {
+public class TextEmbeddingUtil {
 
   private static final String NUM_EMBEDDINGS = "num_embeddings";
 
-  private TextEmbeddingPuffinWriter() {}
+  private TextEmbeddingUtil() {}
 
   static List<Blob> generateBlobs(
       SparkSession spark,
@@ -92,7 +92,7 @@ public class TextEmbeddingPuffinWriter {
   private static Column[] toAggColumns(
       List<String> colNames, String modelName, Map<String, String> modelInputs) {
     return colNames.stream()
-        .map(column -> TextEmbeddingPuffinWriter.toAggColumn(column, modelName, modelInputs))
+        .map(column -> TextEmbeddingUtil.toAggColumn(column, modelName, modelInputs))
         .toArray(Column[]::new);
   }
 
