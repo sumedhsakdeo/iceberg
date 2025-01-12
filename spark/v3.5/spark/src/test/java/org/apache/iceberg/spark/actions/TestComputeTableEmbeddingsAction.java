@@ -25,10 +25,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.store.embedding.CosineSimilarity;
+import dev.langchain4j.store.embedding.EmbeddingMatch;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.EmbeddingSearchResult;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.BlobMetadata;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Files;
@@ -40,6 +50,9 @@ import org.apache.iceberg.actions.ComputeTableEmbeddings;
 import org.apache.iceberg.data.FileHelpers;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.puffin.Puffin;
+import org.apache.iceberg.puffin.PuffinReader;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.CatalogTestBase;
@@ -84,8 +97,9 @@ public class TestComputeTableEmbeddingsAction extends CatalogTestBase {
 
   @TestTemplate
   public void testLoadingTableDirectly() {
+    String text = "hello";
     sql("CREATE TABLE %s (id int, data string) USING iceberg", tableName);
-    sql("INSERT into %s values(1, 'abcd')", tableName);
+    sql("INSERT into %s values(1, '%s')", tableName, text);
 
     Table table = validationCatalog.loadTable(tableIdent);
 
@@ -100,6 +114,30 @@ public class TestComputeTableEmbeddingsAction extends CatalogTestBase {
     StatisticsFile statisticsFile = results.statisticsFile();
     assertThat(statisticsFile.fileSizeInBytes()).isGreaterThan(0);
     assertThat(statisticsFile.blobMetadata()).hasSize(1);
+
+    List<TextEmbeddingBuffer> textEmbeddingBuffers = getTextEmbeddingBuffers(table, statisticsFile);
+    assertThat(textEmbeddingBuffers.size()).isEqualTo(1);
+    assertThat(textEmbeddingBuffers.get(0).getTextEmbeddings().size()).isEqualTo(1);
+
+    assertThat(
+            CosineSimilarity.between(
+                textEmbeddingBuffers.get(0).getTextEmbeddings().get(0).getEmbedding(),
+                EmbeddingModelBuilder.builder()
+                    .modelName(EmbeddingModelBuilder.ALL_MINI_LM_L6V2)
+                    .build()
+                    .embed("hello")
+                    .content()))
+        .isGreaterThanOrEqualTo(1.0);
+
+    assertThat(
+            CosineSimilarity.between(
+                textEmbeddingBuffers.get(0).getTextEmbeddings().get(0).getEmbedding(),
+                EmbeddingModelBuilder.builder()
+                    .modelName(EmbeddingModelBuilder.ALL_MINI_LM_L6V2)
+                    .build()
+                    .embed("world")
+                    .content()))
+        .isLessThan(1.0);
   }
 
   @TestTemplate
@@ -115,11 +153,11 @@ public class TestComputeTableEmbeddingsAction extends CatalogTestBase {
         .commit();
     List<SimpleRecord> records =
         Lists.newArrayList(
-            new SimpleRecord(1, "a"),
-            new SimpleRecord(1, "a"),
-            new SimpleRecord(2, "b"),
-            new SimpleRecord(3, "c"),
-            new SimpleRecord(4, "d"));
+            new SimpleRecord(1, "The cat chased a butterfly"),
+            new SimpleRecord(1, "Stars twinkle brightly at night"),
+            new SimpleRecord(2, "Coffee smells amazing every morning"),
+            new SimpleRecord(3, "She danced under the rain"),
+            new SimpleRecord(4, "Books hold endless fascinating stories"));
     spark.createDataset(records, Encoders.bean(SimpleRecord.class)).writeTo(tableName).append();
     SparkActions actions = SparkActions.get();
     table.refresh();
@@ -141,6 +179,81 @@ public class TestComputeTableEmbeddingsAction extends CatalogTestBase {
 
     BlobMetadata blobMetadata = statisticsFile.blobMetadata().get(0);
     assertThat(blobMetadata.properties()).containsEntry(EMBEDDINGS_V1_BLOB_PROPERTY, "5");
+
+    List<TextEmbeddingBuffer> textEmbeddingBuffers = getTextEmbeddingBuffers(table, statisticsFile);
+    assertThat(textEmbeddingBuffers.size()).isEqualTo(1);
+    assertThat(textEmbeddingBuffers.get(0).getTextEmbeddings().size()).isEqualTo(5);
+
+    Embedding inputEmbedding =
+        EmbeddingModelBuilder.builder()
+            .modelName(EmbeddingModelBuilder.ALL_MINI_LM_L6V2)
+            .build()
+            .embed("Moonlight glows softly every evening")
+            .content();
+    TextEmbeddingBuffer textEmbeddingBuffer = textEmbeddingBuffers.get(0);
+    PriorityQueue<Pair<Double, TextEmbedding>> pq =
+        new PriorityQueue<>((pq1, pq2) -> -Double.compare(pq1.getLeft(), pq2.getLeft()));
+    InMemoryEmbeddingStore inMemoryEmbeddingStore = new InMemoryEmbeddingStore();
+
+    for (TextEmbedding storedEmbedding : textEmbeddingBuffer.getTextEmbeddings()) {
+      Double similarity = CosineSimilarity.between(inputEmbedding, storedEmbedding.getEmbedding());
+      pq.add(
+          new Pair<Double, TextEmbedding>() {
+            @Override
+            public Double getLeft() {
+              return similarity;
+            }
+
+            @Override
+            public TextEmbedding getRight() {
+              return storedEmbedding;
+            }
+
+            @Override
+            public TextEmbedding setValue(TextEmbedding value) {
+              return storedEmbedding;
+            }
+          });
+      inMemoryEmbeddingStore.add(
+          storedEmbedding.getTextSegment().text(), storedEmbedding.getEmbedding());
+    }
+    assertThat(pq.poll().getRight().getTextSegment().text())
+        .isEqualTo("Stars twinkle brightly at night");
+    assertThat(pq.poll().getRight().getTextSegment().text())
+        .isIn("She danced under the rain", "Coffee smells amazing every morning");
+    assertThat(pq.poll().getRight().getTextSegment().text())
+        .isIn("She danced under the rain", "Coffee smells amazing every morning");
+
+    EmbeddingSearchResult embeddingSearchResult =
+        inMemoryEmbeddingStore.search(
+            EmbeddingSearchRequest.builder().queryEmbedding(inputEmbedding).build());
+    List<EmbeddingMatch> matches = embeddingSearchResult.matches();
+    PriorityQueue<Pair<Double, String>> mq =
+        new PriorityQueue<>((pq1, pq2) -> -Double.compare(pq1.getLeft(), pq2.getLeft()));
+    for (EmbeddingMatch match : matches) {
+      mq.add(
+          new Pair<Double, String>() {
+            @Override
+            public Double getLeft() {
+              return match.score();
+            }
+
+            @Override
+            public String getRight() {
+              return match.embeddingId();
+            }
+
+            @Override
+            public String setValue(String value) {
+              return match.embeddingId();
+            }
+          });
+    }
+    assertThat(mq.poll().getRight()).isEqualTo("Stars twinkle brightly at night");
+    assertThat(mq.poll().getRight())
+        .isIn("She danced under the rain", "Coffee smells amazing every morning");
+    assertThat(mq.poll().getRight())
+        .isIn("She danced under the rain", "Coffee smells amazing every morning");
   }
 
   @TestTemplate
@@ -423,6 +536,27 @@ public class TestComputeTableEmbeddingsAction extends CatalogTestBase {
   private void append(String table, Dataset<Row> df) throws NoSuchTableException {
     // fanout writes are enabled as write-time clustering is not supported without Spark extensions
     df.coalesce(1).writeTo(table).option(SparkWriteOptions.FANOUT_ENABLED, "true").append();
+  }
+
+  private List<TextEmbeddingBuffer> getTextEmbeddingBuffers(
+      Table table, StatisticsFile statisticsFile) {
+    InputFile inputFile = table.io().newInputFile(statisticsFile.path());
+    List<TextEmbeddingBuffer> textEmbeddingBuffers = new ArrayList<>();
+
+    try (PuffinReader puffinReader = Puffin.read(inputFile).build()) {
+      Iterable<org.apache.iceberg.util.Pair<org.apache.iceberg.puffin.BlobMetadata, ByteBuffer>>
+          pairs = puffinReader.readAll(puffinReader.fileMetadata().blobs());
+      for (org.apache.iceberg.util.Pair<org.apache.iceberg.puffin.BlobMetadata, ByteBuffer> pair :
+          pairs) {
+        org.apache.iceberg.puffin.BlobMetadata blobMetadata = pair.first();
+        ByteBuffer byteBuffer = pair.second();
+
+        textEmbeddingBuffers.add(TextEmbeddingBuffer.deserialize(byteBuffer.array()));
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return textEmbeddingBuffers;
   }
 
   @AfterEach
