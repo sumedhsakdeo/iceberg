@@ -150,7 +150,8 @@ public class ComputeTableEmbeddingsSparkAction
 
   private void validateColumns() {
     Schema schema = table.schemas().get(snapshot.schemaId());
-    Preconditions.checkArgument(!columns().isEmpty(), "No columns found to compute embeddings");
+    Preconditions.checkArgument(
+        !columns.isEmpty() && !columns().isEmpty(), "No columns found to compute embeddings");
     for (String columnName : columns()) {
       Types.NestedField field = schema.findField(columnName);
       Preconditions.checkArgument(field != null, "Can't find column %s in %s", columnName, schema);
