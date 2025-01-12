@@ -20,6 +20,7 @@ package org.apache.iceberg.spark.actions;
 
 import org.apache.iceberg.Table;
 import org.apache.iceberg.actions.ActionsProvider;
+import org.apache.iceberg.actions.ComputeTableEmbeddings;
 import org.apache.iceberg.actions.ComputeTableStats;
 import org.apache.iceberg.actions.RemoveDanglingDeleteFiles;
 import org.apache.iceberg.spark.Spark3Util;
@@ -102,6 +103,11 @@ public class SparkActions implements ActionsProvider {
   @Override
   public ComputeTableStats computeTableStats(Table table) {
     return new ComputeTableStatsSparkAction(spark, table);
+  }
+
+  @Override
+  public ComputeTableEmbeddings computeTableEmbeddings(Table table) {
+    return new ComputeTableEmbeddingsSparkAction(spark, table);
   }
 
   @Override
