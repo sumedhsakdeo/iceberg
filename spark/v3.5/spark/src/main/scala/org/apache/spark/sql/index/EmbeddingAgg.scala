@@ -72,14 +72,14 @@ case class EmbeddingAgg(
     val value = child.eval(input)
     if (value != null && value.isInstanceOf[UTF8String]) {
 
-      val metadata: Metadata = new Metadata()
-      metadata.put("column_name", columnName)
-      metadata.put("model_name", modelName)
-      val textSegment: TextSegment = TextSegment.from(value.toString, metadata)
       val embeddingModel: EmbeddingModel = EmbeddingModelBuilder.builder()
         .modelName(modelName)
         .modelInputs(modelInputs.asJava)
         .build()
+      val metadata: Metadata = new Metadata()
+      metadata.put("column_name", columnName)
+      metadata.put("model_name", modelName)
+      val textSegment: TextSegment = TextSegment.from(value.toString, metadata)
       val embedding: Embedding = embeddingModel.embed(textSegment).content()
       val singletonList: java.util.List[TextEmbedding] =
         Collections.singletonList(new TextEmbedding(textSegment, embedding))

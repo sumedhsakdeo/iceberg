@@ -43,7 +43,7 @@ import scala.collection.JavaConverters;
 
 public class TextEmbeddingUtil {
 
-  private static final String NUM_EMBEDDINGS = "num_embeddings";
+  public static final String EMBEDDINGS_V1_BLOB_PROPERTY = "embeddings";
 
   private TextEmbeddingUtil() {}
 
@@ -75,7 +75,7 @@ public class TextEmbeddingUtil {
         snapshot.sequenceNumber(),
         ByteBuffer.wrap(serializedEmbeddings),
         PuffinCompressionCodec.ZSTD,
-        ImmutableMap.of(NUM_EMBEDDINGS, String.valueOf(numEmbeddings)));
+        ImmutableMap.of(EMBEDDINGS_V1_BLOB_PROPERTY, String.valueOf(numEmbeddings)));
   }
 
   private static Row computeEmbeddings(
