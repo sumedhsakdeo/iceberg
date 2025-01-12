@@ -33,7 +33,6 @@ import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -541,7 +540,7 @@ public class TestComputeTableEmbeddingsAction extends CatalogTestBase {
   private List<TextEmbeddingBuffer> getTextEmbeddingBuffers(
       Table table, StatisticsFile statisticsFile) {
     InputFile inputFile = table.io().newInputFile(statisticsFile.path());
-    List<TextEmbeddingBuffer> textEmbeddingBuffers = new ArrayList<>();
+    List<TextEmbeddingBuffer> textEmbeddingBuffers = Lists.newArrayList();
 
     try (PuffinReader puffinReader = Puffin.read(inputFile).build()) {
       Iterable<org.apache.iceberg.util.Pair<org.apache.iceberg.puffin.BlobMetadata, ByteBuffer>>
