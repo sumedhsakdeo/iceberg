@@ -90,13 +90,15 @@ public class ComputeTableEmbeddingsSparkAction
 
   @Override
   public ComputeTableEmbeddings modelName(String newModelName) {
-    Preconditions.checkArgument(newModelName != null && !newModelName.isEmpty(), "Model name cannot be null or empty");
+    Preconditions.checkArgument(
+        newModelName != null && !newModelName.isEmpty(), "Model name cannot be null or empty");
     this.modelName = newModelName;
     return this;
   }
 
   @Override
   public ComputeTableEmbeddings modelInputs(Map<String, String> newModelInputs) {
+    Preconditions.checkArgument(newModelInputs != null, "Model inputs cannot be null");
     this.modelInputs = newModelInputs;
     return this;
   }
