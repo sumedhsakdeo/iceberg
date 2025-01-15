@@ -64,4 +64,11 @@ public class TextEmbeddingBuffer {
         TextEmbeddingBuffer.class, new TextEmbeddingBufferTypeAdapter<TextEmbeddingBuffer>());
     return gsonBuilder.create().toJson(this);
   }
+
+  public static TextEmbeddingBuffer fromString(String json) {
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    gsonBuilder.registerTypeAdapter(
+        TextEmbeddingBuffer.class, new TextEmbeddingBufferTypeAdapter<TextEmbeddingBuffer>());
+    return gsonBuilder.create().fromJson(json, TextEmbeddingBuffer.class);
+  }
 }

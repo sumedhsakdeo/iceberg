@@ -19,7 +19,6 @@
 package org.apache.iceberg.spark.actions;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -43,6 +42,7 @@ import org.apache.iceberg.puffin.PuffinWriter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.JobGroupInfo;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.SparkSession;
@@ -135,7 +135,7 @@ public class ComputeTableEmbeddingsSparkAction
       blobs.forEach(writer::add);
       writer.finish();
 
-      List<org.apache.iceberg.BlobMetadata> genericBlobMetatdataList = new ArrayList<>();
+      List<org.apache.iceberg.BlobMetadata> genericBlobMetatdataList = Lists.newArrayList();
       for (BlobMetadata blobMetadata : writer.writtenBlobsMetadata()) {
         org.apache.iceberg.BlobMetadata genericBlobMetadata =
             GenericBlobMetadata.from(blobMetadata);
