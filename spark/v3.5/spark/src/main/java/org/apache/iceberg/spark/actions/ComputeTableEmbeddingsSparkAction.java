@@ -137,7 +137,8 @@ public class ComputeTableEmbeddingsSparkAction
 
       List<org.apache.iceberg.BlobMetadata> genericBlobMetatdataList = new ArrayList<>();
       for (BlobMetadata blobMetadata : writer.writtenBlobsMetadata()) {
-        org.apache.iceberg.BlobMetadata genericBlobMetadata = GenericBlobMetadata.from(blobMetadata);
+        org.apache.iceberg.BlobMetadata genericBlobMetadata =
+            GenericBlobMetadata.from(blobMetadata);
         genericBlobMetatdataList.add(genericBlobMetadata);
       }
 
@@ -146,8 +147,7 @@ public class ComputeTableEmbeddingsSparkAction
           outputFile.location(),
           writer.fileSize(),
           writer.footerSize(),
-          genericBlobMetatdataList
-      );
+          genericBlobMetatdataList);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

@@ -18,6 +18,8 @@
  */
 package org.apache.iceberg.spark.procedures;
 
+import java.util.Collections;
+import java.util.Map;
 import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.actions.ComputeTableEmbeddings;
 import org.apache.iceberg.spark.procedures.SparkProcedures.ProcedureBuilder;
@@ -46,7 +48,7 @@ public class ComputeTableEmbeddingsProcedure extends BaseProcedure {
 
   private static final ProcedureParameter[] PARAMETERS =
       new ProcedureParameter[] {
-        TABLE_PARAM, SNAPSHOT_ID_PARAM, COLUMNS_PARAM, MODEL_NAME_PARAM, MODEL_INPUTS_PARAM
+        TABLE_PARAM, MODEL_NAME_PARAM, MODEL_INPUTS_PARAM, SNAPSHOT_ID_PARAM, COLUMNS_PARAM
       };
 
   private static final StructType OUTPUT_TYPE =
@@ -84,10 +86,16 @@ public class ComputeTableEmbeddingsProcedure extends BaseProcedure {
     Identifier tableIdent = input.ident(TABLE_PARAM);
     Long snapshotId = input.asLong(SNAPSHOT_ID_PARAM, null);
     String[] columns = input.asStringArray(COLUMNS_PARAM, null);
+    String modelName = input.asString(MODEL_NAME_PARAM);
+    Map<String, String> modelInputs = input.asStringMap(MODEL_INPUTS_PARAM, Collections.emptyMap());
     return modifyIcebergTable(
         tableIdent,
         table -> {
           ComputeTableEmbeddings action = actions().computeTableEmbeddings(table);
+
+          action.modelName(modelName);
+
+          action.modelInputs(modelInputs);
 
           if (snapshotId != null) {
             action.snapshot(snapshotId);

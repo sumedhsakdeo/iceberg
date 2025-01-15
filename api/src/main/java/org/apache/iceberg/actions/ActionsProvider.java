@@ -74,7 +74,6 @@ public interface ActionsProvider {
   /** Instantiates an action to compute table embeddings. * */
   default ComputeTableEmbeddings computeTableEmbeddings(Table table) {
     throw new UnsupportedOperationException(
-            this.getClass().getName() + " does not implement computeTableEmbeddings");
+        this.getClass().getName() + " does not implement computeTableEmbeddings");
   }
-
 }

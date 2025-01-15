@@ -102,5 +102,4 @@ public class SparkActions implements ActionsProvider {
   public ComputeTableEmbeddings computeTableEmbeddings(Table table) {
     return new ComputeTableEmbeddingsSparkAction(spark, table);
   }
-
 }
