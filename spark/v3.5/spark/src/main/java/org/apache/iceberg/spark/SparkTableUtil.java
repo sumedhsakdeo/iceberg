@@ -727,6 +727,14 @@ public class SparkTableUtil {
     return loadMetadataTable(spark, table, type, ImmutableMap.of());
   }
 
+  public static Dataset<Row> loadTable(SparkSession sparkSession, Table table, long snapshotId) {
+    SparkTable sparkTable = new SparkTable(table, snapshotId, false);
+    CaseInsensitiveStringMap options = new CaseInsensitiveStringMap(ImmutableMap.of());
+    DataSourceV2Relation relation =
+        DataSourceV2Relation.create(sparkTable, Some.empty(), Some.empty(), options);
+    return Dataset.ofRows(sparkSession, relation);
+  }
+
   public static Dataset<Row> loadMetadataTable(
       SparkSession spark, Table table, MetadataTableType type, Map<String, String> extraOptions) {
     SparkTable metadataTable =

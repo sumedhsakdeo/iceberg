@@ -16,20 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iceberg.puffin;
+package org.apache.iceberg.actions;
 
-public final class StandardBlobTypes {
-  private StandardBlobTypes() {}
+import javax.annotation.Nullable;
+import org.apache.iceberg.StatisticsFile;
+import org.immutables.value.Value;
 
-  /**
-   * A serialized form of a "compact" Theta sketch produced by the <a
-   * href="https://datasketches.apache.org/">Apache DataSketches</a> library
-   */
-  public static final String APACHE_DATASKETCHES_THETA_V1 = "apache-datasketches-theta-v1";
+@Value.Enclosing
+@SuppressWarnings("ImmutablesStyle")
+@Value.Style(
+    typeImmutableEnclosing = "ImmutableComputeTableEmbeddings",
+    visibilityString = "PUBLIC",
+    builderVisibilityString = "PUBLIC")
+interface BaseComputeTableEmbeddings extends ComputeTableEmbeddings {
 
-  /** A serialized deletion vector according to the Iceberg spec */
-  public static final String DV_V1 = "deletion-vector-v1";
-
-  /** A serialized embedding representation using a chosen model */
-  public static final String EMBEDDINGS_V1 = "embedding-v1";
+  @Value.Immutable
+  interface Result extends ComputeTableEmbeddings.Result {
+    @Override
+    @Nullable
+    StatisticsFile statisticsFile();
+  }
 }

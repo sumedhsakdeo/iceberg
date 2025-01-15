@@ -16,20 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iceberg.puffin;
+package org.apache.iceberg.spark.actions;
 
-public final class StandardBlobTypes {
-  private StandardBlobTypes() {}
+import com.google.gson.Gson;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import java.io.IOException;
 
-  /**
-   * A serialized form of a "compact" Theta sketch produced by the <a
-   * href="https://datasketches.apache.org/">Apache DataSketches</a> library
-   */
-  public static final String APACHE_DATASKETCHES_THETA_V1 = "apache-datasketches-theta-v1";
+public class TextEmbeddingBufferTypeAdapter<T> extends TypeAdapter<TextEmbeddingBuffer> {
 
-  /** A serialized deletion vector according to the Iceberg spec */
-  public static final String DV_V1 = "deletion-vector-v1";
+  @Override
+  public void write(JsonWriter out, TextEmbeddingBuffer value) throws IOException {
+    Gson gson = new Gson();
+    out.jsonValue(gson.toJson(value));
+  }
 
-  /** A serialized embedding representation using a chosen model */
-  public static final String EMBEDDINGS_V1 = "embedding-v1";
+  @Override
+  public TextEmbeddingBuffer read(JsonReader in) throws IOException {
+    Gson gson = new Gson();
+    return gson.fromJson(in, TextEmbeddingBuffer.class);
+  }
 }
