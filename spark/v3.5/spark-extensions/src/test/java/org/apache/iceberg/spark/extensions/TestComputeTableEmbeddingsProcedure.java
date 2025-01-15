@@ -21,6 +21,7 @@ package org.apache.iceberg.spark.extensions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
+import java.util.List;
 import org.apache.iceberg.ParameterizedTestExtension;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.spark.actions.EmbeddingModelBuilder;
@@ -34,7 +35,6 @@ public class TestComputeTableEmbeddingsProcedure extends ExtensionsTestBase {
   @AfterEach
   public void removeTables() {
     sql("DROP TABLE IF EXISTS %s", tableName);
-    sql("DROP TABLE IF EXISTS %s_BACKUP_", tableName);
   }
 
   @TestTemplate
@@ -47,22 +47,24 @@ public class TestComputeTableEmbeddingsProcedure extends ExtensionsTestBase {
 
     Table table = validationCatalog.loadTable(tableIdent);
 
-    assertThat(table.statisticsFiles()).isNull();
+    assertThat(table.statisticsFiles()).isEmpty();
 
-    sql(
-        "CALL %s.system.compute_table_embeddings ("
-            + "table => '%s', "
-            + "model_name => '%s', "
-            + "model_inputs => map('x', 'y'), "
-            + "snapshot_id => %s, "
-            + "columns => array('data') "
-            + ")",
-        catalogName,
-        tableName,
-        EmbeddingModelBuilder.ALL_MINI_LM_L6V2,
-        table.currentSnapshot().snapshotId());
+    List<Object[]> sqlOutput =
+        sql(
+            "CALL %s.system.compute_table_embeddings ("
+                + "table => '%s', "
+                + "model_name => '%s', "
+                + "model_inputs => map('x', 'y'), "
+                + "snapshot_id => %s, "
+                + "columns => array('data') "
+                + ")",
+            catalogName,
+            tableName,
+            EmbeddingModelBuilder.ALL_MINI_LM_L6V2,
+            table.currentSnapshot().snapshotId());
+    assertThat(sqlOutput.size()).isEqualTo(1);
     table.refresh();
 
-    assertThat(table.statisticsFiles()).isNotNull();
+    assertThat(table.statisticsFiles()).isNotEmpty();
   }
 }
