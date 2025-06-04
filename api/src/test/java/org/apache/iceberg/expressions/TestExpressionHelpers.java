@@ -24,6 +24,7 @@ import static org.apache.iceberg.expressions.Expressions.and;
 import static org.apache.iceberg.expressions.Expressions.bucket;
 import static org.apache.iceberg.expressions.Expressions.day;
 import static org.apache.iceberg.expressions.Expressions.equal;
+import static org.apache.iceberg.expressions.Expressions.euclideanDistance;
 import static org.apache.iceberg.expressions.Expressions.greaterThan;
 import static org.apache.iceberg.expressions.Expressions.greaterThanOrEqual;
 import static org.apache.iceberg.expressions.Expressions.hour;
@@ -47,6 +48,7 @@ import static org.apache.iceberg.expressions.Expressions.year;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 import org.apache.iceberg.transforms.Transforms;
 import org.apache.iceberg.types.Types;
@@ -146,6 +148,9 @@ public class TestExpressionHelpers {
 
   @Test
   public void testTransformExpressions() {
+    assertThat(equal(euclideanDistance("floatVector", List.of("1.0f", "2.0f", "3.0f"), 3), 1.0f))
+            .as("Should produce the correct expression string")
+            .hasToString("euclidean_distance(ref(name=\"floatVector\"), [1.0f, 2.0f, 3.0f], 3) == 1.0f");
     assertThat(equal(year("ts"), "2019"))
         .as("Should produce the correct expression string")
         .hasToString("year(ref(name=\"ts\")) == \"2019\"");
@@ -220,6 +225,8 @@ public class TestExpressionHelpers {
 
     assertInvalidateNaNThrows(() -> predicate(Expression.Operation.EQ, "a", Double.NaN));
   }
+
+
 
   private void assertInvalidateNaNThrows(Callable<UnboundPredicate<Double>> callable) {
     assertThatThrownBy(callable::call)

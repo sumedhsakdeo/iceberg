@@ -24,6 +24,7 @@ import static org.apache.iceberg.expressions.Expressions.and;
 import static org.apache.iceberg.expressions.Expressions.bucket;
 import static org.apache.iceberg.expressions.Expressions.day;
 import static org.apache.iceberg.expressions.Expressions.equal;
+import static org.apache.iceberg.expressions.Expressions.euclideanDistance;
 import static org.apache.iceberg.expressions.Expressions.greaterThanOrEqual;
 import static org.apache.iceberg.expressions.Expressions.hour;
 import static org.apache.iceberg.expressions.Expressions.lessThanOrEqual;
@@ -274,7 +275,10 @@ public class TestProjection {
             optional(6, "date2", Types.DateType.get()),
             optional(7, "date3", Types.DateType.get()),
             optional(8, "long", Types.LongType.get()),
-            optional(9, "string", Types.StringType.get()));
+            optional(9, "string", Types.StringType.get()),
+            optional(10, "floatVectors", Types.ListType.ofOptional(10, Types.FloatType.get())),
+            optional(11, "doubleVectors", Types.ListType.ofOptional(11, Types.DoubleType.get()))
+        );
 
     final PartitionSpec partitionSpec =
         PartitionSpec.builderFor(schema)
@@ -370,5 +374,10 @@ public class TestProjection {
         (UnboundPredicate<Integer>)
             Projections.inclusive(partitionSpec).project(equal(truncate("string", 10), "abc"));
     assertThat(predicate.ref().name()).isEqualTo("string_trunc");
+//
+//    predicate =
+//            (UnboundPredicate<Types.FloatType>)
+//                Projections.strict(partitionSpec).project(equal(euclideanDistance("floatVectors", List.of(1.0f, 2.0f, 3.0f), 3), 20));
+
   }
 }

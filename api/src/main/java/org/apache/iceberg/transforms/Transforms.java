@@ -18,6 +18,7 @@
  */
 package org.apache.iceberg.transforms;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -269,6 +270,17 @@ public class Transforms {
    */
   public static <T> Transform<T, T> truncate(int width) {
     return Truncate.get(width);
+  }
+
+  /**
+   * Returns a {@link Transform} that computes euclidean distance.
+   *
+   * @param vector Input vector
+   * @param dimension Dimension of the vector
+   * @return a transform that computes euclidean distance
+   */
+  public static <T> Transform<List<T>, T> euclideanDistance(List<T> vector, int dimension) {
+    return EuclideanDistance.get(vector, dimension);
   }
 
   /**

@@ -18,6 +18,7 @@
  */
 package org.apache.iceberg.expressions;
 
+import java.util.List;
 import java.util.stream.Stream;
 import org.apache.iceberg.expressions.Expression.Operation;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -100,6 +101,10 @@ public class Expressions {
 
   public static <T> UnboundTerm<T> truncate(String name, int width) {
     return new UnboundTransform<>(ref(name), Transforms.truncate(width));
+  }
+
+  public static <T> UnboundTerm<T> euclideanDistance(String name, List<T> vector, int dimension) {
+    return new UnboundTransform<>(ref(name), Transforms.euclideanDistance(vector, dimension));
   }
 
   public static <T> UnboundPredicate<T> isNull(String name) {

@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.apache.iceberg.expressions.Expressions;
@@ -128,6 +129,22 @@ public class TestSortOrderComparators {
         TestHelpers.Row.of("id3", 1.11f),
         TestHelpers.Row.of("id1", 2.22f),
         TestHelpers.Row.of("id1", 1.11f));
+  }
+
+  @Test
+  public void testFloatEuclideanDistance() {
+    Schema schema =
+            new Schema(
+                    Types.NestedField.optional(1, "id", Types.StringType.get()),
+                    Types.NestedField.optional(2, "vector", Types.ListType.ofRequired(3, Types.FloatType.get())));
+    TestHelpers.Row v1 = TestHelpers.Row.of("id1", TestHelpers.Row.of(1.0f, 2.0f, 3.0f));
+    TestHelpers.Row v2 = TestHelpers.Row.of("id2", TestHelpers.Row.of(2.0f, 3.0f, 4.0f));
+    TestHelpers.Row v3 = TestHelpers.Row.of("id3", TestHelpers.Row.of(3.0f, 4.0f, 5.0f));
+
+    Transform<List<Float>, Float> euclideanDistance = Transforms.euclideanDistance(List.of(1.0f, 2.0f, 3.0f), 3);
+    SerializableFunction<List<Float>, Float> transform = euclideanDistance.bind(Types.FloatType.get());
+
+    assertThat(transform.apply(List.of(1.0f, 2.0f, 3.0f))).isEqualTo(0.0f);
   }
 
   @Test
